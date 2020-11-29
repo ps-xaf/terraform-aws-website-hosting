@@ -8,6 +8,12 @@ provider "aws" {
 
 locals {
   s3_origin_id = "S3-website-${var.bucket_name}"
+
+  tags_common = {
+    description      = "Website hosting"
+    terraform_module = "terraform-aws-website-hosting"
+    name             = "website-${var.bucket_name}"
+  }
 }
 
 resource "aws_s3_bucket" "this" {
@@ -37,7 +43,7 @@ resource "aws_s3_bucket" "this" {
     index_document = "index.html"
     error_document = "error.html"
   }
-  tags = var.tags
+  tags = merge(var.tags, local.tags_common, { "service" = "s3" })
 }
 
 resource "aws_acm_certificate" "this" {
@@ -46,7 +52,7 @@ resource "aws_acm_certificate" "this" {
   subject_alternative_names = var.dns_names
   validation_method         = "DNS"
 
-  tags = var.tags
+  tags = merge(var.tags, local.tags_common, { "service" = "s3" })
 
   lifecycle {
     create_before_destroy = true
@@ -119,7 +125,7 @@ resource "aws_cloudfront_distribution" "this" {
     }
   }
 
-  tags = var.tags
+  tags = merge(var.tags, local.tags_common, { "service" = "s3" })
 
   viewer_certificate {
     cloudfront_default_certificate = false
